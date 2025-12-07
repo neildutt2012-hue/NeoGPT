@@ -1,208 +1,170 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AIONEX — Your AI Assistant</title>
-  <meta name="description" content="AIONEX — AI-powered assistant for wallpapers, math, learning, and more." />
-  <link rel="icon" href="assets/logo.png">
-  <style>
-    :root {
-      --bg:#0b0b0c;
-      --panel:#111214;
-      --accent:#00ffcc;
-      --muted:#9aa0a6;
-      --card:#141416;
-      --radius:14px;
-    }
-    *{box-sizing:border-box;}
-    body{
-      margin:0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-      background:var(--bg);
-      color:#e6eef1;
-      line-height:1.4;
-      padding-bottom:120px;
-    }
-    header{
-      position:sticky;
-      top:0;
-      background:var(--panel);
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      padding:16px 28px;
-      border-bottom:1px solid rgba(255,255,255,0.03);
-    }
-    .brand h1{color:var(--accent); margin:0; font-size:1.2rem;}
-    nav a{color:var(--muted); text-decoration:none; margin-left:18px; font-size:0.95rem;}
-    nav a:hover{color:var(--accent);}
-    main{max-width:1200px;margin:28px auto;padding:0 18px;display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start;}
-    .col-left{display:grid;gap:18px;}
-    .card{
-      background:var(--card);
-      border-radius:var(--radius);
-      padding:18px;
-      box-shadow:0 8px 30px rgba(2,6,8,0.6);
-      border:1px solid rgba(255,255,255,0.02);
-    }
-    .card h2{margin:0 0 10px 0;color:var(--accent);}
-    .muted{color:var(--muted);}
-    #chatArea{height:500px; display:flex; flex-direction:column;}
-    .messages{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px;background:linear-gradient(180deg, rgba(0,0,0,0.02), transparent);border-radius:10px;}
-    .msg{max-width:84%;padding:10px 12px;border-radius:12px;line-height:1.3;}
-    .msg.assistant{background:rgba(0,255,204,0.05); color:#dffbf0;align-self:flex-start;}
-    .msg.user{background:rgba(255,255,255,0.03); color:#fff;align-self:flex-end;}
-    .controls{display:flex;gap:10px;margin-top:12px;}
-    input[type="text"], textarea, select{width:100%;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);color:inherit;padding:10px;border-radius:10px;outline:none;font-size:0.95rem;}
-    button{background:var(--accent);border:0;padding:10px 14px;border-radius:10px;color:#001;cursor:pointer;font-weight:600;}
-    button.ghost{background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.03);}
-    .col-right{display:flex;flex-direction:column;gap:18px;position:sticky;top:78px;}
-    .small-preview{height:120px;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,0.03);background:#050506;display:flex;align-items:center;justify-content:center;color:var(--muted);}
-    pre.output{white-space:pre-wrap;background:rgba(0,0,0,0.35);padding:12px;border-radius:8px;color:#e6f7f1;border:1px solid rgba(255,255,255,0.02);font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;}
-    footer{margin:42px 0 80px 0;text-align:center;color:var(--muted);font-size:0.9rem;}
-    @media (max-width:980px){main{grid-template-columns:1fr; padding:18px}.col-right{position:relative;top:0;}}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeoGPT</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #0d0d0d, #1a1a1a);
+    color: #f5f5f5;
+    font-family: 'Roboto', sans-serif;
+  }
+  h1, h2 {
+    font-family: 'Orbitron', sans-serif;
+    color: #1f8ef1;
+    text-align: center;
+    margin: 20px 0;
+  }
+  .container {
+    max-width: 800px;
+    margin: auto;
+    padding: 20px;
+  }
+  textarea {
+    width: 100%;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 10px;
+    border: none;
+    resize: none;
+    font-size: 16px;
+    background-color: #1a1a1a;
+    color: #f5f5f5;
+  }
+  button {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #1f8ef1, #6a11cb);
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px #1f8ef1, 0 0 30px #6a11cb;
+  }
+  .output {
+    background-color: #121212;
+    border-radius: 10px;
+    padding: 15px;
+    margin-top: 15px;
+    min-height: 50px;
+    box-shadow: 0 0 15px #1f8ef1 inset;
+    overflow-y: auto;
+    max-height: 400px;
+  }
+  .chat-message {
+    margin-bottom: 10px;
+  }
+  .chat-message strong {
+    color: #1f8ef1;
+  }
+  img.generated-image {
+    margin-top: 10px;
+    border-radius: 10px;
+    max-width: 100%;
+    box-shadow: 0 0 15px #6a11cb;
+  }
+  .loading {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    border: 3px solid #1f8ef1;
+    border-top: 3px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 10px;
+    vertical-align: middle;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg);}
+    100% { transform: rotate(360deg);}
+  }
+</style>
 </head>
 <body>
-  <header>
-    <div class="brand"><h1>AIONEX</h1></div>
-    <nav>
-      <a href="#chat">Chat</a>
-      <a href="#wallpaper">Wallpapers</a>
-      <a href="#math">Math</a>
-      <a href="#learn">Lessons</a>
-    </nav>
-  </header>
+<div class="container">
+  <h1>NeoGPT</h1>
 
-  <main>
-    <div class="col-left">
-      <!-- Chat -->
-      <section id="chat" class="card">
-        <h2>AIONEX Chat</h2>
-        <div class="muted">Ask anything — AI assistant for tech, math, wallpapers, or learning.</div>
-        <div id="chatArea">
-          <div class="messages" id="messages">
-            <div class="msg assistant"><strong>AIONEX:</strong> Hello! Ask me anything.</div>
-          </div>
-          <form id="chatForm" class="controls" onsubmit="return false;">
-            <input id="chatInput" type="text" placeholder="Ask AIONEX..." autocomplete="off" />
-            <button id="sendBtn" type="button">Send</button>
-          </form>
-        </div>
-      </section>
+  <!-- Chat Section -->
+  <h2>💬 Chat with NeoGPT</h2>
+  <textarea id="chat-input" rows="3" placeholder="Type your message..."></textarea>
+  <button onclick="sendChat()">Send</button>
+  <div id="chat-output" class="output"></div>
 
-      <!-- Math solver -->
-      <section id="math" class="card">
-        <h2>Math Solver</h2>
-        <div class="muted">Type a math problem to solve step-by-step.</div>
-        <input id="mathInput" type="text" placeholder="e.g., solve 2x+3=11"/>
-        <label><input type="checkbox" id="mathSteps" checked /> Show steps</label>
-        <button id="mathSolveBtn">Solve</button>
-        <pre id="mathResult" class="output"></pre>
-      </section>
+  <!-- Image Generation Section -->
+  <h2>🖼️ Generate AI Images</h2>
+  <textarea id="image-input" rows="3" placeholder="Describe the image you want..."></textarea>
+  <button onclick="generateImage()">Generate Image</button>
+  <div id="image-output" class="output"></div>
+</div>
 
-      <!-- Lessons -->
-      <section id="learn" class="card">
-        <h2>Lesson & Notes Generator</h2>
-        <input id="lessonPrompt" placeholder="Type lesson topic or request..." />
-        <button id="genLessonBtn">Generate Lesson</button>
-        <pre id="lessonOutput" class="output"></pre>
-      </section>
-    </div>
+<script>
+  const backendURL = "https://CreatorOfNeoGPT.pythonanywhere.com";
 
-    <aside class="col-right">
-      <!-- Wallpaper -->
-      <section id="wallpaper" class="card">
-        <h2>Wallpaper Generator</h2>
-        <input id="wallPrompt" type="text" placeholder="Wallpaper prompt..." />
-        <select id="wallSize">
-          <option value="1080x1920">Phone 1080×1920</option>
-          <option value="1920x1080">Desktop 1920×1080</option>
-        </select>
-        <button id="genWallBtn">Generate</button>
-        <div id="wallPreview" class="small-preview">No image yet</div>
-      </section>
-    </aside>
-  </main>
+  async function sendChat() {
+    const prompt = document.getElementById("chat-input").value;
+    if (!prompt) return;
+    const chatOutput = document.getElementById("chat-output");
+    chatOutput.innerHTML += `<div class="chat-message"><strong>You:</strong> ${prompt}</div>`;
+    document.getElementById("chat-input").value = "";
 
-  <footer>© <span id="year"></span> AIONEX — AI Assistant</footer>
+    // Loading indicator
+    const loading = document.createElement('span');
+    loading.className = 'loading';
+    chatOutput.appendChild(loading);
 
-  <script>
-    const byId = id => document.getElementById(id);
-    byId("year").textContent = new Date().getFullYear();
+    try {
+      const res = await fetch(`${backendURL}/chat`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({prompt})
+      });
+      const data = await res.json();
+      loading.remove();
 
-    function appendMsg(text, who="assistant"){
-      const d = document.createElement("div");
-      d.className = "msg " + (who==="user"?"user":"assistant");
-      d.innerHTML = (who==="assistant"? "<strong>AIONEX:</strong> " : "") + text;
-      byId("messages").appendChild(d);
-      byId("messages").scrollTop = byId("messages").scrollHeight;
-    }
-
-    byId("sendBtn").addEventListener("click", async ()=>{
-      const msg = byId("chatInput").value.trim();
-      if(!msg) return;
-      appendMsg(msg,"user");
-      byId("chatInput").value="";
-      appendMsg("Thinking...","assistant");
-
-      try{
-        const res = await fetch("/api/chat", {
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({ message: msg })
-        });
-        const data = await res.json();
-        const last = byId("messages").querySelector(".msg.assistant:last-child");
-        if(last && last.textContent.includes("Thinking")) last.remove();
-        appendMsg(data.reply ?? "Sorry, no reply.");
-      }catch(err){
-        const last = byId("messages").querySelector(".msg.assistant:last-child");
-        if(last && last.textContent.includes("Thinking")) last.remove();
-        appendMsg("Error: "+err.message);
+      if (data.response) {
+        chatOutput.innerHTML += `<div class="chat-message"><strong>NeoGPT:</strong> ${data.response}</div>`;
+      } else {
+        chatOutput.innerHTML += `<div class="chat-message" style="color:red">Error: Could not get response</div>`;
       }
-    });
+      chatOutput.scrollTop = chatOutput.scrollHeight;
+    } catch (err) {
+      loading.remove();
+      chatOutput.innerHTML += `<div class="chat-message" style="color:red">Error: ${err}</div>`;
+    }
+  }
 
-    // Math solver
-    byId("mathSolveBtn").addEventListener("click", async ()=>{
-      const problem = byId("mathInput").value.trim();
-      if(!problem) return;
-      byId("mathResult").textContent="Solving...";
-      try{
-        const res = await fetch("/api/solve-math",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({problem,steps:byId("mathSteps").checked})});
-        const data = await res.json();
-        byId("mathResult").textContent = data.answer ?? "No result.";
-      }catch(err){ byId("mathResult").textContent="Error: "+err.message; }
-    });
+  async function generateImage() {
+    const prompt = document.getElementById("image-input").value;
+    if (!prompt) return;
+    const imageOutput = document.getElementById("image-output");
+    imageOutput.innerHTML = `<div class="loading"></div> Generating image...`;
 
-    // Lesson generator
-    byId("genLessonBtn").addEventListener("click", async ()=>{
-      const prompt = byId("lessonPrompt").value.trim();
-      if(!prompt) return;
-      byId("lessonOutput").textContent="Generating...";
-      try{
-        const res = await fetch("/api/lesson",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt,type:"lesson"})});
-        const data = await res.json();
-        byId("lessonOutput").textContent = data.lessonText ?? "No lesson returned.";
-      }catch(err){ byId("lessonOutput").textContent="Error: "+err.message; }
-    });
+    try {
+      const res = await fetch(`${backendURL}/image`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({prompt})
+      });
+      const data = await res.json();
 
-    // Wallpaper generator
-    byId("genWallBtn").addEventListener("click", async ()=>{
-      const prompt = byId("wallPrompt").value.trim();
-      const size = byId("wallSize").value;
-      const preview = byId("wallPreview");
-      if(!prompt) return;
-      preview.textContent="Generating...";
-      try{
-        const res = await fetch("/api/generate-image",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt,size})});
-        const data = await res.json();
-        const url = data.image_url ?? null;
-        if(url) preview.innerHTML=`<img src="${url}" style="width:100%;height:100%;object-fit:cover" />`;
-        else preview.textContent="Error generating image.";
-      }catch(err){ preview.textContent="Error: "+err.message; }
-    });
-  </script>
+      if (data[0] && data[0].generated_image_url) {
+        imageOutput.innerHTML = `<img class="generated-image" src="${data[0].generated_image_url}" alt="Generated Image">`;
+      } else {
+        imageOutput.innerHTML = `<div style="color:red">Error: Could not generate image</div>`;
+      }
+    } catch (err) {
+      imageOutput.innerHTML = `<div style="color:red">Error: ${err}</div>`;
+    }
+  }
+</script>
 </body>
 </html>
