@@ -1,228 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeoGPT</title>
-    <style>
-        /* ---------- GLOBAL ---------- */
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f9f9f9;
-            color: #111;
-        }
-        h1 {
-            margin: 0;
-            font-size: 2rem;
-        }
-        .container {
-            max-width: 900px;
-            margin: 40px auto;
-            padding: 20px;
-        }
-        button {
-            cursor: pointer;
-            background-color: #111;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 1rem;
-            border-radius: 5px;
-        }
-        button:hover {
-            background-color: #333;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeoGPT</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+  body { background-color: #121212; color: #e0e0e0; display: flex; height: 100vh; overflow: hidden; }
+  a { color: #82b1ff; text-decoration: none; }
 
-        /* ---------- HEADER ---------- */
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
+  #history { width: 35%; background-color: #1e1e1e; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+  .message { padding: 10px 15px; border-radius: 10px; max-width: 90%; word-wrap: break-word; }
+  .user { background-color: #2a2a2a; align-self: flex-end; color: #ffffff; }
+  .bot { background-color: #333333; align-self: flex-start; color: #82b1ff; }
+  .bot img { max-width: 100%; border-radius: 10px; margin-top: 5px; }
 
-        /* ---------- CHAT ---------- */
-        #chatBox {
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 15px;
-            height: 350px;
-            overflow-y: auto;
-            background-color: #fff;
-        }
-        .message {
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 8px;
-        }
-        .user-msg {
-            background-color: #d1e7ff;
-            text-align: right;
-        }
-        .neo-msg {
-            background-color: #e2f7e2;
-            text-align: left;
-        }
+  #inputPanel { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; background-color: #181818; padding: 20px; }
+  #promptInput { width: 100%; padding: 15px; border-radius: 10px; border: none; background-color: #2a2a2a; color: #ffffff; font-size: 16px; }
+  #sendBtn { margin-top: 10px; padding: 12px 20px; border: none; border-radius: 10px; background-color: #82b1ff; color: #121212; font-weight: bold; cursor: pointer; transition: 0.2s; }
+  #sendBtn:hover { background-color: #4f83cc; }
 
-        /* ---------- INPUT ---------- */
-        .input-area {
-            display: flex;
-            margin-top: 15px;
-            gap: 10px;
-        }
-        .input-area input {
-            flex: 1;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            font-size: 1rem;
-        }
-
-        /* ---------- IMAGE ---------- */
-        #imageBox {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-top: 30px;
-        }
-        #imageBox img {
-            max-width: 250px;
-            border-radius: 10px;
-            border: 1px solid #ccc;
-        }
-
-        /* ---------- LOADING ---------- */
-        .loading {
-            font-style: italic;
-            color: #555;
-        }
-    </style>
+  #history::-webkit-scrollbar { width: 6px; }
+  #history::-webkit-scrollbar-thumb { background-color: #555; border-radius: 3px; }
+</style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>NeoGPT</h1>
-            <p>AI assistant powered by HuggingFace</p>
-        </header>
 
-        <!-- Chat Section -->
-        <div id="chatBox"></div>
-        <div class="input-area">
-            <input type="text" id="chatInput" placeholder="Type your message...">
-            <button onclick="sendChat()">Send</button>
-        </div>
+<div id="history"></div>
 
-        <!-- Image Section -->
-        <div style="margin-top:30px;">
-            <input type="text" id="imageInput" placeholder="Type image description...">
-            <button onclick="generateImage()">Generate Image</button>
-        </div>
-        <div id="imageBox"></div>
-    </div>
+<div id="inputPanel">
+  <input type="text" id="promptInput" placeholder="Ask NeoGPT something..." autofocus>
+  <button id="sendBtn">Send</button>
+</div>
 
-    <script>
-        const chatBox = document.getElementById('chatBox');
-        const chatInput = document.getElementById('chatInput');
-        const imageInput = document.getElementById('imageInput');
-        const imageBox = document.getElementById('imageBox');
+<script>
+const historyDiv = document.getElementById('history');
+const promptInput = document.getElementById('promptInput');
+const sendBtn = document.getElementById('sendBtn');
 
-        const backendURL = "https://CreatorOfNeoGPT.pythonanywhere.com";
+const backendURL = "https://CreatorOfNeoGPT.pythonanywhere.com";
 
-        // Remember conversation
-        let conversationHistory = [];
+// Load history from localStorage
+let chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+chatHistory.forEach(msg => addMessage(msg.text, msg.sender, msg.isImage, false));
 
-        async function sendChat() {
-            const message = chatInput.value.trim();
-            if (!message) return;
+// Append message to history
+function addMessage(text, sender='user', isImage=false, save=true) {
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'message ' + sender;
+    if(isImage){
+        const img = document.createElement('img');
+        img.src = text;
+        msgDiv.appendChild(img);
+    } else {
+        msgDiv.textContent = text;
+    }
+    historyDiv.appendChild(msgDiv);
+    historyDiv.scrollTop = historyDiv.scrollHeight;
 
-            addMessage("user", message);
-            chatInput.value = "";
+    if(save){
+        chatHistory.push({text, sender, isImage});
+        localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+    }
+}
 
-            conversationHistory.push({ role: "user", content: message });
+// Send prompt to backend
+async function sendPrompt() {
+    const prompt = promptInput.value.trim();
+    if(!prompt) return;
+    addMessage(prompt, 'user');
+    promptInput.value = '';
 
-            addMessage("neo", "Typing...", true);
-
-            try {
-                const response = await fetch(`${backendURL}/chat`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ prompt: conversationHistory.map(m => m.content).join("\n") })
-                });
-
-                const data = await response.json();
-                removeTyping();
-                if (data.response) {
-                    addMessage("neo", data.response);
-                    conversationHistory.push({ role: "neo", content: data.response });
-                } else {
-                    addMessage("neo", "Sorry, something went wrong.");
-                }
-            } catch (err) {
-                removeTyping();
-                addMessage("neo", "Error: Could not connect to backend.");
-                console.error(err);
-            }
-        }
-
-        function addMessage(sender, text, isTyping=false) {
-            const div = document.createElement('div');
-            div.classList.add('message');
-            div.classList.add(sender === "user" ? "user-msg" : "neo-msg");
-            div.textContent = text;
-            if (isTyping) div.classList.add('loading');
-            chatBox.appendChild(div);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        function removeTyping() {
-            const loading = document.querySelector('.loading');
-            if (loading) loading.remove();
-        }
-
-        async function generateImage() {
-            const prompt = imageInput.value.trim();
-            if (!prompt) return;
-            imageInput.value = "";
-            const imgDiv = document.createElement('div');
-            imgDiv.textContent = "Generating...";
-            imgDiv.classList.add('loading');
-            imageBox.appendChild(imgDiv);
-
-            try {
-                const response = await fetch(`${backendURL}/image`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ prompt })
-                });
-                const data = await response.json();
-                imgDiv.remove();
-
-                if (data && Array.isArray(data)) {
-                    data.forEach(item => {
-                        if (item.url) {
-                            const img = document.createElement('img');
-                            img.src = item.url;
-                            imageBox.appendChild(img);
-                        }
-                    });
-                } else {
-                    const img = document.createElement('img');
-                    img.src = data.url || "";
-                    imageBox.appendChild(img);
-                }
-            } catch (err) {
-                imgDiv.textContent = "Error generating image.";
-                console.error(err);
-            }
-        }
-
-        // Optional: send message with Enter key
-        chatInput.addEventListener("keypress", function(e) {
-            if (e.key === "Enter") sendChat();
+    try {
+        // Chat response
+        const chatResponse = await fetch(`${backendURL}/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt })
         });
+        const chatData = await chatResponse.json();
+        if(chatData.response) addMessage(chatData.response, 'bot');
 
-        imageInput.addEventListener("keypress", function(e) {
-            if (e.key === "Enter") generateImage();
+        // Image generation
+        const imgResponse = await fetch(`${backendURL}/image`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt })
         });
-    </script>
+        const imgData = await imgResponse.json();
+        if(imgData && imgData[0] && imgData[0].generated_image_url){
+            addMessage(imgData[0].generated_image_url, 'bot', true);
+        }
+    } catch(err){
+        addMessage("Error: Could not connect to backend.", 'bot');
+        console.error(err);
+    }
+}
+
+// Event listeners
+sendBtn.addEventListener('click', sendPrompt);
+promptInput.addEventListener('keypress', e => { if(e.key === 'Enter') sendPrompt(); });
+</script>
+
 </body>
 </html>
