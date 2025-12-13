@@ -1,205 +1,201 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NeoGPT</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Arial', sans-serif;
-      background-color: #121212;
-      color: #e0e0e0;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NeoGPT</title>
 
-    .container {
-      display: flex;
-      height: 100vh;
-    }
+<style>
+* {
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+}
 
-    /* History Panel */
-    .history-panel {
-      width: 25%;
-      background-color: #1e1e1e;
-      border-right: 1px solid #333;
-      overflow-y: auto;
-      padding: 20px;
-      box-sizing: border-box;
-    }
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  background: #0f0f0f;
+  color: #e5e5e5;
+}
 
-    .history-item {
-      background-color: #2a2a2a;
-      margin-bottom: 10px;
-      padding: 10px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+/* Sidebar */
+.sidebar {
+  width: 260px;
+  background: #111;
+  border-right: 1px solid #222;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
 
-    .history-item:hover {
-      background-color: #333;
-    }
+.sidebar h2 {
+  margin: 10px;
+  font-size: 18px;
+}
 
-    /* Chat Panel */
-    .chat-panel {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      padding: 20px;
-      box-sizing: border-box;
-    }
+.chat-list {
+  flex: 1;
+  overflow-y: auto;
+}
 
-    .messages {
-      flex: 1;
-      overflow-y: auto;
-      margin-bottom: 20px;
-    }
+.chat-item {
+  padding: 10px;
+  margin-bottom: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #1a1a1a;
+}
 
-    .message {
-      margin-bottom: 15px;
-    }
+.chat-item:hover {
+  background: #2a2a2a;
+}
 
-    .message .prompt {
-      font-weight: bold;
-      color: #ffcc00;
-    }
+/* Main */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
 
-    .message .response {
-      margin-top: 5px;
-      background-color: #2a2a2a;
-      padding: 10px;
-      border-radius: 5px;
-    }
+.messages {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}
 
-    .message img {
-      max-width: 100%;
-      margin-top: 10px;
-      border-radius: 5px;
-    }
+.message {
+  max-width: 70%;
+  margin-bottom: 16px;
+  padding: 14px;
+  border-radius: 12px;
+  line-height: 1.4;
+}
 
-    .input-section {
-      display: flex;
-    }
+.user {
+  background: #2a2a2a;
+  align-self: flex-end;
+}
 
-    .input-section input {
-      flex: 1;
-      padding: 10px;
-      font-size: 16px;
-      border: none;
-      border-radius: 5px 0 0 5px;
-      outline: none;
-      background-color: #2a2a2a;
-      color: #e0e0e0;
-    }
+.bot {
+  background: #1a1a1a;
+  align-self: flex-start;
+}
 
-    .input-section button {
-      padding: 10px 20px;
-      font-size: 16px;
-      border: none;
-      border-radius: 0 5px 5px 0;
-      background-color: #ffcc00;
-      color: #121212;
-      cursor: pointer;
-    }
+/* Input */
+.input-bar {
+  padding: 16px;
+  border-top: 1px solid #222;
+  display: flex;
+  gap: 10px;
+}
 
-    .input-section button:hover {
-      background-color: #e6b800;
-    }
-  </style>
+input {
+  flex: 1;
+  padding: 14px;
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 10px;
+  color: white;
+  font-size: 16px;
+}
+
+button {
+  padding: 14px 18px;
+  background: #444;
+  border: none;
+  border-radius: 10px;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #666;
+}
+</style>
 </head>
+
 <body>
-  <div class="container">
-    <div class="history-panel" id="historyPanel">
-      <h3>History</h3>
-    </div>
-    <div class="chat-panel">
-      <div class="messages" id="messages"></div>
-      <div class="input-section">
-        <input type="text" id="promptInput" placeholder="Type your message...">
-        <button onclick="sendPrompt()">Send</button>
-      </div>
-    </div>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <h2>NeoGPT</h2>
+  <div class="chat-list" id="chatList"></div>
+</div>
+
+<!-- Main Chat -->
+<div class="main">
+  <div class="messages" id="messages"></div>
+
+  <div class="input-bar">
+    <input id="input" placeholder="Message NeoGPT..." />
+    <button onclick="send()">Send</button>
   </div>
+</div>
 
-  <script>
-    let history = [];
+<script>
+const backend = "https://CreatorOfNeoGPT.pythonanywhere.com/chat";
+let history = JSON.parse(localStorage.getItem("neogpt_history")) || [];
 
-    async function fetchHistory() {
-      const res = await fetch("https://creatorofneogpt.pythonanywhere.com/history");
-      const data = await res.json();
-      history = data.history || [];
-      renderHistory();
-      renderMessages();
-    }
+const messagesDiv = document.getElementById("messages");
+const chatList = document.getElementById("chatList");
 
-    function renderHistory() {
-      const historyPanel = document.getElementById("historyPanel");
-      historyPanel.innerHTML = "<h3>History</h3>";
-      history.forEach((item, index) => {
-        const div = document.createElement("div");
-        div.className = "history-item";
-        div.innerText = item.prompt;
-        div.onclick = () => {
-          document.getElementById("messages").innerHTML = "";
-          history = history.slice(0, index + 1);
-          renderMessages();
-        };
-        historyPanel.appendChild(div);
-      });
-    }
+function renderHistory() {
+  chatList.innerHTML = "";
+  history.forEach((h, i) => {
+    const div = document.createElement("div");
+    div.className = "chat-item";
+    div.textContent = h.user.slice(0, 30);
+    div.onclick = () => loadChat(i);
+    chatList.appendChild(div);
+  });
+}
 
-    function renderMessages() {
-      const messagesDiv = document.getElementById("messages");
-      messagesDiv.innerHTML = "";
-      history.forEach(item => {
-        const div = document.createElement("div");
-        div.className = "message";
+function loadChat(i) {
+  messagesDiv.innerHTML = "";
+  addMessage("user", history[i].user);
+  addMessage("bot", history[i].bot);
+}
 
-        const promptDiv = document.createElement("div");
-        promptDiv.className = "prompt";
-        promptDiv.innerText = "You: " + item.prompt;
+function addMessage(role, text) {
+  const div = document.createElement("div");
+  div.className = "message " + role;
+  div.textContent = text;
+  messagesDiv.appendChild(div);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
 
-        const responseDiv = document.createElement("div");
-        responseDiv.className = "response";
-        responseDiv.innerText = item.response;
+async function send() {
+  const input = document.getElementById("input");
+  const text = input.value.trim();
+  if (!text) return;
 
-        div.appendChild(promptDiv);
-        div.appendChild(responseDiv);
+  addMessage("user", text);
+  input.value = "";
 
-        // Add image if available
-        if (item.image && item.image[0] && item.image[0].generated_image_url) {
-          const img = document.createElement("img");
-          img.src = item.image[0].generated_image_url;
-          div.appendChild(img);
-        }
+  try {
+    const res = await fetch(backend, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: text })
+    });
 
-        messagesDiv.appendChild(div);
-      });
+    const data = await res.json();
+    const reply = data.response || "No response.";
 
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
+    addMessage("bot", reply);
 
-    async function sendPrompt() {
-      const prompt = document.getElementById("promptInput").value.trim();
-      if (!prompt) return;
+    history.push({ user: text, bot: reply });
+    localStorage.setItem("neogpt_history", JSON.stringify(history));
+    renderHistory();
 
-      const res = await fetch("https://creatorofneogpt.pythonanywhere.com/chat", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({prompt})
-      });
+  } catch (e) {
+    addMessage("bot", "❌ Could not connect to backend.");
+  }
+}
 
-      const data = await res.json();
-      if (!data.error) {
-        history = data.history || [];
-        renderHistory();
-        renderMessages();
-        document.getElementById("promptInput").value = "";
-      } else {
-        alert(data.error);
-      }
-    }
+renderHistory();
+</script>
 
-    fetchHistory();
-  </script>
 </body>
 </html>
